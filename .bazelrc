@@ -1,0 +1,9 @@
+# Copyright 2026 The zkbench-cpp Authors.
+# SPDX-License-Identifier: Apache-2.0
+
+# Build with C++17
+build --cxxopt=-std=c++17
+build --host_cxxopt=-std=c++17
+
+# Show test output on failure
+test --test_output=errors

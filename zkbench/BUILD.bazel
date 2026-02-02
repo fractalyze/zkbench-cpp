@@ -1,0 +1,162 @@
+# Copyright 2026 The zkbench-cpp Authors.
+# SPDX-License-Identifier: Apache-2.0
+
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+cc_library(
+    name = "platform",
+    srcs = ["platform.cc"],
+    hdrs = ["platform.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "statistics",
+    srcs = ["statistics.cc"],
+    hdrs = ["statistics.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "stopwatch",
+    srcs = ["stopwatch.cc"],
+    hdrs = ["stopwatch.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "utils",
+    srcs = ["utils.cc"],
+    hdrs = ["utils.h"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "schema",
+    srcs = ["schema.cc"],
+    hdrs = ["schema.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":platform",
+        ":utils",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
+    name = "benchmark_context",
+    srcs = ["benchmark_context.cc"],
+    hdrs = ["benchmark_context.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":schema",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
+    name = "google_benchmark_reporter",
+    srcs = ["google_benchmark_reporter.cc"],
+    hdrs = ["google_benchmark_reporter.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":benchmark_context",
+        ":schema",
+        ":statistics",
+        "@google_benchmark//:benchmark",
+    ],
+)
+
+cc_library(
+    name = "benchmark_main",
+    srcs = ["benchmark_main.cc"],
+    hdrs = ["benchmark_main.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":google_benchmark_reporter",
+        "@google_benchmark//:benchmark",
+    ],
+)
+
+cc_library(
+    name = "zkbench",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":benchmark_context",
+        ":benchmark_main",
+        ":google_benchmark_reporter",
+        ":platform",
+        ":schema",
+        ":statistics",
+        ":stopwatch",
+        ":utils",
+    ],
+)
+
+cc_test(
+    name = "platform_test",
+    srcs = ["platform_test.cc"],
+    deps = [
+        ":platform",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "statistics_test",
+    srcs = ["statistics_test.cc"],
+    deps = [
+        ":statistics",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "stopwatch_test",
+    srcs = ["stopwatch_test.cc"],
+    deps = [
+        ":stopwatch",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "utils_test",
+    srcs = ["utils_test.cc"],
+    deps = [
+        ":utils",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "schema_test",
+    srcs = ["schema_test.cc"],
+    deps = [
+        ":schema",
+        "@googletest//:gtest_main",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_test(
+    name = "benchmark_context_test",
+    srcs = ["benchmark_context_test.cc"],
+    deps = [
+        ":benchmark_context",
+        "@googletest//:gtest_main",
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_test(
+    name = "google_benchmark_reporter_test",
+    srcs = ["google_benchmark_reporter_test.cc"],
+    deps = [
+        ":benchmark_context",
+        ":google_benchmark_reporter",
+        "@google_benchmark//:benchmark",
+        "@googletest//:gtest_main",
+        "@nlohmann_json//:json",
+    ],
+)
