@@ -136,10 +136,33 @@ TEST(PlatformTest, JsonDeserialization) {
 }
 
 TEST(PlatformTest, JsonSerializationSkipsCpuVendorWhenNone) {
-  Platform platform{"linux", "x86_64", 4, std::nullopt};
+  Platform platform{"linux", "x86_64", 4, std::nullopt, std::nullopt};
   nlohmann::json j = platform;
 
   EXPECT_FALSE(j.contains("cpu_vendor"));
+}
+
+TEST(PlatformTest, JsonSerializationSkipsGpuVendorWhenNone) {
+  Platform platform{"linux", "x86_64", 4, "Intel", std::nullopt};
+  nlohmann::json j = platform;
+
+  EXPECT_TRUE(j.contains("cpu_vendor"));
+  EXPECT_FALSE(j.contains("gpu_vendor"));
+}
+
+TEST(PlatformTest, JsonDeserializationWithGpuVendor) {
+  nlohmann::json j = {{"os", "linux"},
+                      {"arch", "x86_64"},
+                      {"cpu_count", 8},
+                      {"gpu_vendor", "NVIDIA RTX 4090"}};
+  Platform platform = j.get<Platform>();
+
+  EXPECT_EQ(platform.os, "linux");
+  EXPECT_EQ(platform.arch, "x86_64");
+  EXPECT_EQ(platform.cpu_count, 8);
+  EXPECT_FALSE(platform.cpu_vendor.has_value());
+  EXPECT_TRUE(platform.gpu_vendor.has_value());
+  EXPECT_EQ(platform.gpu_vendor.value(), "NVIDIA RTX 4090");
 }
 
 TEST(MetadataTest, Create) {

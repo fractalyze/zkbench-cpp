@@ -38,6 +38,14 @@ int GetCpuCount();
 /// - Windows: PROCESSOR_IDENTIFIER environment variable
 std::optional<std::string> GetCpuVendor();
 
+/// Detects GPU vendor/model string.
+///
+/// Returns GPU information from:
+/// - macOS: system_profiler SPDisplaysDataType (Chipset Model)
+/// - Linux: nvidia-smi or rocm-smi
+/// For multi-GPU systems, returns only the first GPU.
+std::optional<std::string> GetGpuVendor();
+
 }  // namespace zkbench
 
 #endif  // ZKBENCH_PLATFORM_H_

@@ -61,5 +61,14 @@ TEST(PlatformTest, GetCpuVendor) {
 #endif
 }
 
+TEST(PlatformTest, GetGpuVendor) {
+  // This test just ensures the function doesn't crash.
+  // The result may be nullopt on CI or systems without a GPU.
+  auto vendor = GetGpuVendor();
+  if (vendor.has_value()) {
+    EXPECT_FALSE(vendor->empty());
+  }
+}
+
 }  // namespace
 }  // namespace zkbench

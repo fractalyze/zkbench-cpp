@@ -62,6 +62,7 @@ struct Platform {
   std::string arch;
   int cpu_count;
   std::optional<std::string> cpu_vendor;
+  std::optional<std::string> gpu_vendor;
 
   /// Creates Platform with auto-detected values.
   static Platform Current();
