@@ -5,12 +5,12 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-VERSION = "1.8.5"
+VERSION = "1.9.4"
 
 def repo():
     http_archive(
         name = "com_google_benchmark",
         url = "https://github.com/google/benchmark/archive/refs/tags/v{version}.tar.gz".format(version = VERSION),
         strip_prefix = "benchmark-{version}".format(version = VERSION),
-        integrity = "sha256-0meJorRtiAikikVW7ljMx8SX/NTAr5uQGXZ0qB4EeYo=",
+        integrity = "sha256-szRljt01788GqZ2b4h5Ok+CSvV+VB0wWc9XIcF2VwQQ=",
     )
