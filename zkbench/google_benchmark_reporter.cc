@@ -71,8 +71,9 @@ void GoogleBenchmarkReporter::ReportRuns(const std::vector<Run>& runs) {
     data.time_unit = run.time_unit;
 
     // Extract memory if available
-    if (run.memory_result.max_bytes_used > 0) {
-      data.memory_bytes = static_cast<double>(run.memory_result.max_bytes_used);
+    if (run.memory_result != nullptr && run.memory_result->max_bytes_used > 0) {
+      data.memory_bytes =
+          static_cast<double>(run.memory_result->max_bytes_used);
     }
 
     // Extract throughput from counters
