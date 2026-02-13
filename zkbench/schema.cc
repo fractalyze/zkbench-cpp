@@ -31,10 +31,7 @@ MetricValue MetricValue::WithBounds(double value, std::string_view unit,
 
 Platform Platform::Current() {
   return Platform{
-      GetOsName(),
-      GetArchName(),
-      GetCpuCount(),
-      GetCpuVendor(),
+      GetOsName(), GetArchName(), GetCpuCount(), GetCpuVendor(), GetGpuVendor(),
   };
 }
 
@@ -62,6 +59,10 @@ std::string BenchmarkReport::ToJson(int indent) const {
   if (metadata.platform.cpu_vendor.has_value()) {
     j["metadata"]["platform"]["cpu_vendor"] =
         metadata.platform.cpu_vendor.value();
+  }
+  if (metadata.platform.gpu_vendor.has_value()) {
+    j["metadata"]["platform"]["gpu_vendor"] =
+        metadata.platform.gpu_vendor.value();
   }
 
   j["benchmarks"] = nlohmann::ordered_json::object();
@@ -155,6 +156,9 @@ void to_json(nlohmann::json& j, const Platform& p) {
   if (p.cpu_vendor.has_value()) {
     j["cpu_vendor"] = p.cpu_vendor.value();
   }
+  if (p.gpu_vendor.has_value()) {
+    j["gpu_vendor"] = p.gpu_vendor.value();
+  }
 }
 
 void to_json(nlohmann::json& j, const Metadata& m) {
@@ -213,6 +217,9 @@ void from_json(const nlohmann::json& j, Platform& p) {
   j.at("cpu_count").get_to(p.cpu_count);
   if (j.contains("cpu_vendor")) {
     p.cpu_vendor = j.at("cpu_vendor").get<std::string>();
+  }
+  if (j.contains("gpu_vendor")) {
+    p.gpu_vendor = j.at("gpu_vendor").get<std::string>();
   }
 }
 

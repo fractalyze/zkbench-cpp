@@ -15,8 +15,10 @@ limitations under the License.
 
 #include "zkbench/platform.h"
 
+#include <array>
 #include <cstdlib>
 #include <fstream>
+#include <memory>
 #include <regex>   // NOLINT(build/c++11)
 #include <thread>  // NOLINT(build/c++11)
 
@@ -113,6 +115,64 @@ std::optional<std::string> GetCpuVendor() {
 #elif defined(_WIN32)
   return GetCpuVendorWindows();
 #else
+  return std::nullopt;
+#endif
+}
+
+namespace {
+
+/// Runs a shell command and returns its stdout, trimmed of whitespace.
+std::optional<std::string> RunCommand(const char* cmd) {
+  std::array<char, 256> buffer;
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+  if (!pipe) {
+    return std::nullopt;
+  }
+  while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) !=
+         nullptr) {
+    result += buffer.data();
+  }
+  // Trim whitespace from both ends.
+  const auto first = result.find_first_not_of(" \t\n\r");
+  if (first == std::string::npos) {
+    return std::nullopt;
+  }
+  const auto last = result.find_last_not_of(" \t\n\r");
+  return result.substr(first, last - first + 1);
+}
+
+}  // namespace
+
+std::optional<std::string> GetGpuVendor() {
+#if defined(__APPLE__)
+  auto output = RunCommand("system_profiler SPDisplaysDataType");
+  if (!output.has_value()) {
+    return std::nullopt;
+  }
+  std::regex chipset_regex(R"(Chipset Model:\s*(.+))");
+  std::smatch match;
+  if (std::regex_search(*output, match, chipset_regex)) {
+    return match[1].str();
+  }
+  return std::nullopt;
+#else
+  // Try NVIDIA first.
+  auto nvidia = RunCommand(
+      "nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null"
+      " | head -1");
+  if (nvidia.has_value() && !nvidia->empty()) {
+    return nvidia;
+  }
+  // Try AMD ROCm.
+  auto rocm = RunCommand("rocm-smi --showproductname 2>/dev/null");
+  if (rocm.has_value() && !rocm->empty()) {
+    std::regex card_regex(R"(Card Series:\s*(.+))");
+    std::smatch match;
+    if (std::regex_search(*rocm, match, card_regex)) {
+      return match[1].str();
+    }
+  }
   return std::nullopt;
 #endif
 }
