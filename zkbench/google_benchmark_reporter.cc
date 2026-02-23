@@ -92,7 +92,8 @@ void GoogleBenchmarkReporter::Finalize() {
       result.latency = MetricValue::Create(times[0], "ns");
     } else {
       auto [mean, stdev] = CalculateStatistics(times);
-      auto [lower, upper] = CalculateConfidenceInterval(mean, stdev);
+      auto [lower, upper] =
+          CalculateConfidenceInterval(mean, stdev, times.size());
       result.latency = MetricValue::WithBounds(mean, "ns", lower, upper);
     }
 

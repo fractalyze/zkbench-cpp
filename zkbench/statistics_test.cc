@@ -16,6 +16,7 @@ limitations under the License.
 #include "zkbench/statistics.h"
 
 #include <cmath>
+#include <stdexcept>
 
 #include "gtest/gtest.h"
 
@@ -51,27 +52,40 @@ TEST(StatisticsTest, CalculateStatisticsThrowsOnEmpty) {
 }
 
 TEST(StatisticsTest, CalculateConfidenceInterval95) {
-  auto [lower, upper] = CalculateConfidenceInterval(100.0, 10.0, 0.95);
+  // mean=100, stdev=10, n=25 → se=2, margin=3.92
+  auto [lower, upper] = CalculateConfidenceInterval(100.0, 10.0, 25, 0.95);
 
-  // With z = 2.0 for 95%: margin = 20
-  EXPECT_DOUBLE_EQ(lower, 80.0);
-  EXPECT_DOUBLE_EQ(upper, 120.0);
+  EXPECT_NEAR(lower, 96.08, 0.0001);
+  EXPECT_NEAR(upper, 103.92, 0.0001);
 }
 
 TEST(StatisticsTest, CalculateConfidenceInterval99) {
-  auto [lower, upper] = CalculateConfidenceInterval(100.0, 10.0, 0.99);
+  // mean=100, stdev=10, n=25 → se=2, margin=5.152
+  auto [lower, upper] = CalculateConfidenceInterval(100.0, 10.0, 25, 0.99);
 
-  // With z = 2.576 for 99%: margin = 25.76
-  EXPECT_NEAR(lower, 74.24, 0.001);
-  EXPECT_NEAR(upper, 125.76, 0.001);
+  EXPECT_NEAR(lower, 100.0 - 5.152, 0.001);
+  EXPECT_NEAR(upper, 100.0 + 5.152, 0.001);
 }
 
 TEST(StatisticsTest, CalculateConfidenceIntervalDefaultsTo95) {
-  auto [lower1, upper1] = CalculateConfidenceInterval(100.0, 10.0);
-  auto [lower2, upper2] = CalculateConfidenceInterval(100.0, 10.0, 0.95);
+  auto [lower1, upper1] = CalculateConfidenceInterval(100.0, 10.0, 25);
+  auto [lower2, upper2] = CalculateConfidenceInterval(100.0, 10.0, 25, 0.95);
 
   EXPECT_DOUBLE_EQ(lower1, lower2);
   EXPECT_DOUBLE_EQ(upper1, upper2);
+}
+
+TEST(StatisticsTest, CalculateConfidenceIntervalSingleSample) {
+  // n=1: se = stdev, margin = 1.96 × stdev
+  auto [lower, upper] = CalculateConfidenceInterval(50.0, 5.0, 1, 0.95);
+
+  EXPECT_NEAR(lower, 40.2, 0.0001);
+  EXPECT_NEAR(upper, 59.8, 0.0001);
+}
+
+TEST(StatisticsTest, CalculateConfidenceIntervalZeroNThrows) {
+  EXPECT_THROW(CalculateConfidenceInterval(100.0, 10.0, 0),
+               std::invalid_argument);
 }
 
 }  // namespace
