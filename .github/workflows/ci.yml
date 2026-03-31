@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: [self-hosted, zkbench-cpp]
+    runs-on: [self-hosted, cpu]
     steps:
       - name: Checkout zkbenc-cpp
         uses: actions/checkout@v4
@@ -30,7 +30,7 @@ jobs:
             //...
 
   pre-commit-style:
-    runs-on: [self-hosted, zkbench-cpp]
+    runs-on: [self-hosted, cpu]
     steps:
       - name: Checkout zkbench-cpp
         uses: actions/checkout@v4
