@@ -60,7 +60,8 @@ int main() {
 
   // Calculate statistics
   auto [mean, stdev] = zkbench::CalculateStatistics(times);
-  auto [lower, upper] = zkbench::CalculateConfidenceInterval(mean, stdev);
+  auto [lower, upper] = zkbench::CalculateConfidenceInterval(mean, stdev,
+                                                              times.size());
 
   // Store results
   zkbench::BenchmarkResult result;

@@ -29,17 +29,23 @@ namespace zkbench {
 std::pair<double, double> CalculateStatistics(
     const std::vector<double>& values);
 
-/// Calculates confidence interval bounds using z-score approximation.
+/// Calculates confidence interval bounds for the sample mean.
 ///
-/// Uses simple z-score approximation:
-/// - 95% confidence: z = 2.0 (rounded from 1.96)
+/// Uses the formula: mean ± z × (stdev / √n), where stdev / √n is the
+/// standard error of the mean.
+///
+/// z-score approximation:
+/// - 95% confidence: z = 1.96
 /// - 99% confidence: z = 2.576
 ///
 /// @param mean Sample mean.
 /// @param stdev Sample standard deviation.
+/// @param n Sample size.
 /// @param confidence Confidence level (default 0.95 for 95%).
 /// @return Pair of (lower_bound, upper_bound).
+/// @throws std::invalid_argument if n is zero.
 std::pair<double, double> CalculateConfidenceInterval(double mean, double stdev,
+                                                      size_t n,
                                                       double confidence = 0.95);
 
 }  // namespace zkbench

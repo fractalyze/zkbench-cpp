@@ -47,19 +47,25 @@ std::pair<double, double> CalculateStatistics(
 }
 
 std::pair<double, double> CalculateConfidenceInterval(double mean, double stdev,
+                                                      size_t n,
                                                       double confidence) {
+  if (n == 0) {
+    throw std::invalid_argument("Sample size n must be greater than zero");
+  }
+
   double z;
   constexpr double kEpsilon = 0.001;
 
   if (std::abs(confidence - 0.95) < kEpsilon) {
-    z = 2.0;
+    z = 1.96;
   } else if (std::abs(confidence - 0.99) < kEpsilon) {
     z = 2.576;
   } else {
-    z = 2.0;  // Default to 95% confidence
+    z = 1.96;  // Default to 95% confidence
   }
 
-  double margin = z * stdev;
+  double se = stdev / std::sqrt(static_cast<double>(n));
+  double margin = z * se;
   return {mean - margin, mean + margin};
 }
 
