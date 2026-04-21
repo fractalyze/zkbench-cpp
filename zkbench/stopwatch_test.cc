@@ -138,5 +138,56 @@ TEST(StopwatchTest, StopWhileStoppedNoOp) {
   EXPECT_EQ(sw.ElapsedNanos(), elapsed);
 }
 
+TEST(ScopedStopwatchTest, StartsOnCtorStopsOnDtor) {
+  Stopwatch sw;
+  EXPECT_FALSE(sw.IsRunning());
+  {
+    ScopedStopwatch guard(sw);
+    EXPECT_TRUE(sw.IsRunning());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, StopsEvenOnEarlyReturn) {
+  Stopwatch sw;
+  auto run = [&](bool early) {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (early) return;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  };
+  run(/*early=*/true);
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, StopsOnException) {
+  Stopwatch sw;
+  try {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    throw std::runtime_error("boom");
+  } catch (const std::runtime_error&) {
+  }
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, AccumulatesAcrossMultipleScopes) {
+  Stopwatch sw;
+  {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  int64_t first = sw.ElapsedNanos();
+  {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_GT(sw.ElapsedNanos(), first);
+}
+
 }  // namespace
 }  // namespace zkbench

@@ -61,6 +61,37 @@ class Stopwatch {
   bool paused_ = false;
 };
 
+/// RAII guard that starts a `Stopwatch` on construction and stops it on
+/// destruction. Useful for timing a scope that has multiple exit paths
+/// (early returns, exceptions) without manually pairing every `Stop`
+/// with its `Start`.
+///
+/// Example:
+///   Stopwatch sw;
+///   {
+///     ScopedStopwatch guard(sw);
+///     RunBenchmarkIteration();  // sw.Stop() fires even on throw/return
+///   }
+///   record_latency(sw.ElapsedMillis());
+///
+/// Nesting two guards on the same `Stopwatch` is a no-op for the inner
+/// guard: `Stopwatch::Start` ignores re-entrant calls while running, and
+/// the inner dtor's `Stop` will stop the already-running stopwatch on
+/// first destruction. Prefer one guard per stopwatch per scope.
+class ScopedStopwatch {
+ public:
+  explicit ScopedStopwatch(Stopwatch& sw) : sw_(sw) { sw_.Start(); }
+  ~ScopedStopwatch() { sw_.Stop(); }
+
+  ScopedStopwatch(const ScopedStopwatch&) = delete;
+  ScopedStopwatch& operator=(const ScopedStopwatch&) = delete;
+  ScopedStopwatch(ScopedStopwatch&&) = delete;
+  ScopedStopwatch& operator=(ScopedStopwatch&&) = delete;
+
+ private:
+  Stopwatch& sw_;
+};
+
 }  // namespace zkbench
 
 #endif  // ZKBENCH_STOPWATCH_H_
