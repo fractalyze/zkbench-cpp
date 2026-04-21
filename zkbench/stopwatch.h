@@ -74,14 +74,19 @@ class Stopwatch {
 ///   }
 ///   record_latency(sw.ElapsedMillis());
 ///
-/// Nesting two guards on the same `Stopwatch` is a no-op for the inner
-/// guard: `Stopwatch::Start` ignores re-entrant calls while running, and
-/// the inner dtor's `Stop` will stop the already-running stopwatch on
-/// first destruction. Prefer one guard per stopwatch per scope.
+/// Nested guards on the same `Stopwatch` are safe: only the outermost
+/// guard (the one that observed the stopwatch as not-running at
+/// construction) issues `Start`/`Stop`. Inner guards are no-ops, so the
+/// outer scope's timing remains correct.
 class ScopedStopwatch {
  public:
-  explicit ScopedStopwatch(Stopwatch& sw) : sw_(sw) { sw_.Start(); }
-  ~ScopedStopwatch() { sw_.Stop(); }
+  explicit ScopedStopwatch(Stopwatch& sw)
+      : sw_(sw), owns_timer_(!sw.IsRunning()) {
+    if (owns_timer_) sw_.Start();
+  }
+  ~ScopedStopwatch() {
+    if (owns_timer_) sw_.Stop();
+  }
 
   ScopedStopwatch(const ScopedStopwatch&) = delete;
   ScopedStopwatch& operator=(const ScopedStopwatch&) = delete;
@@ -90,6 +95,7 @@ class ScopedStopwatch {
 
  private:
   Stopwatch& sw_;
+  bool owns_timer_;
 };
 
 }  // namespace zkbench
