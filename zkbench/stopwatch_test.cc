@@ -138,5 +138,90 @@ TEST(StopwatchTest, StopWhileStoppedNoOp) {
   EXPECT_EQ(sw.ElapsedNanos(), elapsed);
 }
 
+TEST(ScopedStopwatchTest, StartsOnCtorStopsOnDtor) {
+  Stopwatch sw;
+  EXPECT_FALSE(sw.IsRunning());
+  {
+    ScopedStopwatch guard(sw);
+    EXPECT_TRUE(sw.IsRunning());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, StopsEvenOnEarlyReturn) {
+  Stopwatch sw;
+  auto run = [&](bool early) {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (early) return;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  };
+  run(/*early=*/true);
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, StopsOnException) {
+  Stopwatch sw;
+  try {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    throw std::runtime_error("boom");
+  } catch (const std::runtime_error&) {
+  }
+  EXPECT_FALSE(sw.IsRunning());
+  EXPECT_GE(sw.ElapsedMillis(), 9.0);
+}
+
+TEST(ScopedStopwatchTest, AccumulatesAcrossMultipleScopes) {
+  Stopwatch sw;
+  {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  int64_t first = sw.ElapsedNanos();
+  {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_GT(sw.ElapsedNanos(), first);
+}
+
+TEST(ScopedStopwatchTest, NestedGuardsDoNotInterfere) {
+  Stopwatch sw;
+  {
+    ScopedStopwatch outer(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    {
+      ScopedStopwatch inner(sw);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    // Inner dtor must not stop the stopwatch — outer still owns it.
+    EXPECT_TRUE(sw.IsRunning());
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_FALSE(sw.IsRunning());
+  // ~30ms of total wall clock under the outer scope.
+  EXPECT_GE(sw.ElapsedMillis(), 27.0);
+}
+
+TEST(ScopedStopwatchTest, GuardOverPreRunningStopwatchIsPassive) {
+  // A guard that finds the stopwatch already running is a no-op at both
+  // ends: it neither re-starts nor stops on destruction, leaving the
+  // caller's Start/Stop pairing intact.
+  Stopwatch sw;
+  sw.Start();
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  {
+    ScopedStopwatch guard(sw);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(sw.IsRunning());
+  sw.Stop();
+  EXPECT_GE(sw.ElapsedMillis(), 18.0);
+}
+
 }  // namespace
 }  // namespace zkbench
